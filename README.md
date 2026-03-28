@@ -1,38 +1,44 @@
 # 📸 Photo Review AI
 
-Ứng dụng web giúp phân tích và đánh giá ảnh nhiếp ảnh bằng AI (Google Gemini). Upload ảnh lên và nhận phản hồi chi tiết về kỹ thuật chụp, bố cục, ánh sáng, màu sắc cùng các gợi ý cải thiện.
+A web app that analyzes and reviews photography using AI (Google Gemini). Upload a photo and get detailed feedback on shooting technique, composition, lighting, color, and actionable improvement tips.
 
-## Demo
+## Screenshots
 
-1. Upload ảnh (kéo thả hoặc click chọn)
-2. Nhấn "Phân tích ảnh"
-3. Nhận đánh giá chi tiết với điểm số và góp ý từ AI
+| Upload | Analyzing | Result |
+|--------|-----------|--------|
+| ![Analyzing](image/Screenshot%202026-03-28%20151540.png) | ![Upload](image/Screenshot%202026-03-28%20151452.png) | ![Result](image/screencapture-localhost-53864-2026-03-28-15_22_15.png) |
 
-## Yêu cầu
+## How It Works
+
+1. Upload a photo (drag & drop or click to select)
+2. Click "Analyze"
+3. Get a detailed review with scores and tips from AI
+
+## Requirements
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- Google Gemini API Key ([lấy tại đây](https://aistudio.google.com/apikey))
+- Google Gemini API Key ([get one here](https://aistudio.google.com/apikey))
 
-## Cài đặt & Chạy
+## Setup & Run
 
 ```bash
-# 1. Clone repo
+# 1. Clone the repo
 git clone <repo-url>
 cd PhotoReview
 
-# 2. Cấu hình API Key
-#    Mở file src/PhotoReview/appsettings.json
-#    Thay giá trị "ApiKey" trong section "Gemini" bằng key của bạn
+# 2. Configure your API Key
+#    Open src/PhotoReview/appsettings.json
+#    Replace the "ApiKey" value in the "Gemini" section with your own key
 
-# 3. Chạy ứng dụng
+# 3. Run the app
 dotnet run --project src/PhotoReview
 ```
 
-Ứng dụng sẽ chạy tại: `https://localhost:53864` (hoặc `http://localhost:53865`)
+The app will be available at: `https://localhost:53864` (or `http://localhost:53865`)
 
-## Cấu hình
+## Configuration
 
-Toàn bộ cấu hình nằm trong `src/PhotoReview/appsettings.json`:
+All configuration lives in `src/PhotoReview/appsettings.json`:
 
 ### Gemini API
 
@@ -45,10 +51,10 @@ Toàn bộ cấu hình nằm trong `src/PhotoReview/appsettings.json`:
 }
 ```
 
-- `ApiKey`: API key của Google Gemini
-- `Models`: Danh sách model sử dụng, hệ thống sẽ tự động fallback sang model tiếp theo nếu model hiện tại bị rate limit (429) hoặc không tìm thấy (404)
+- `ApiKey`: Your Google Gemini API key
+- `Models`: List of models to use. The system automatically falls back to the next model if the current one hits a rate limit (429) or is not found (404)
 
-### Tùy chỉnh AI
+### AI Customization
 
 ```json
 {
@@ -56,40 +62,40 @@ Toàn bộ cấu hình nằm trong `src/PhotoReview/appsettings.json`:
     "Language": "Vietnamese",
     "Role": "You are a world-class photography mentor...",
     "Criteria": [
-      { "Icon": "📐", "Name": "Bố cục & Góc máy", "Description": "..." }
+      { "Icon": "📐", "Name": "Composition", "Description": "..." }
     ]
   }
 }
 ```
 
-- `Language`: Ngôn ngữ phản hồi của AI
-- `Role`: Vai trò / persona của AI
-- `Criteria`: Danh sách tiêu chí đánh giá, có thể thêm/bớt/sửa tùy ý
+- `Language`: AI response language
+- `Role`: AI persona / system role
+- `Criteria`: List of review criteria — add, remove, or edit as needed
 
-## Giới hạn upload
+## Upload Limits
 
-- Định dạng: JPG, PNG, WebP, GIF
-- Dung lượng tối đa: 10MB
+- Formats: JPG, PNG, WebP, GIF
+- Max file size: 10MB
 
-## Cấu trúc dự án
+## Project Structure
 
 ```
 src/PhotoReview/
 ├── Program.cs                  # Entry point, API endpoint
 ├── Services/
-│   ├── GeminiClient.cs         # Gọi Gemini API với auto fallback
-│   ├── ImageValidator.cs       # Validate file upload
-│   └── PromptBuilder.cs        # Tạo prompt từ config
+│   ├── GeminiClient.cs         # Gemini API client with auto model fallback
+│   ├── ImageValidator.cs       # File upload validation
+│   └── PromptBuilder.cs        # Builds prompt from config
 ├── wwwroot/
-│   ├── index.html              # Giao diện chính
-│   ├── app.js                  # Logic frontend
-│   └── style.css               # Giao diện dark theme
-├── appsettings.json            # Cấu hình API & tiêu chí đánh giá
+│   ├── index.html              # Main UI
+│   ├── app.js                  # Frontend logic
+│   └── style.css               # Dark theme styling
+├── appsettings.json            # API & review criteria config
 └── PhotoReview.csproj          # Project file (.NET 9)
 ```
 
 ## Tech Stack
 
 - Backend: ASP.NET Core 9 (Minimal API)
-- Frontend: Vanilla HTML/CSS/JS (không framework)
-- AI: Google Gemini API (multimodal — hỗ trợ phân tích ảnh)
+- Frontend: Vanilla HTML/CSS/JS (no framework)
+- AI: Google Gemini API (multimodal — supports image analysis)

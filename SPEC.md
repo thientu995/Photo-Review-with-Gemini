@@ -1,40 +1,40 @@
-# 📸 Photo Review AI — Đặc tả kỹ thuật (Spec)
+# 📸 Photo Review AI — Technical Specification
 
-## 1. Tổng quan
+## 1. Overview
 
-Photo Review AI là ứng dụng web cho phép người dùng upload ảnh và nhận đánh giá chi tiết về kỹ thuật nhiếp ảnh từ Google Gemini AI. Ứng dụng hướng đến người mới học chụp ảnh, giúp họ hiểu điểm mạnh/yếu và cách cải thiện.
+Photo Review AI is a web application that lets users upload photos and receive detailed photography feedback from Google Gemini AI. It targets beginner photographers, helping them understand strengths, weaknesses, and how to improve.
 
-## 2. Kiến trúc hệ thống
+## 2. Architecture
 
 ```
 ┌─────────────┐     POST /api/analyze     ┌──────────────────┐     HTTPS     ┌─────────────┐
-│   Browser    │ ──────────────────────── │  ASP.NET Core 9  │ ────────────── │ Gemini API  │
-│  (Frontend)  │ <─────── JSON ────────── │  (Minimal API)   │ <── JSON ──── │  (Google)   │
+│   Browser    │ ────────────────────────▶ │  ASP.NET Core 9  │ ────────────▶ │ Gemini API  │
+│  (Frontend)  │ ◀──────── JSON ───────── │  (Minimal API)   │ ◀─── JSON ── │  (Google)   │
 └─────────────┘                           └──────────────────┘               └─────────────┘
 ```
 
-- Frontend gửi ảnh qua `multipart/form-data`
-- Backend validate ảnh, chuyển sang base64, gọi Gemini API
-- Gemini trả về markdown, frontend parse và hiển thị
+- Frontend sends the image via `multipart/form-data`
+- Backend validates the image, converts to base64, and calls the Gemini API
+- Gemini returns markdown; the frontend parses and renders it
 
 ## 3. API
 
 ### POST `/api/analyze`
 
-Upload ảnh để phân tích.
+Upload a photo for analysis.
 
 **Request:**
 - Content-Type: `multipart/form-data`
-- Body: field `photo` chứa file ảnh
+- Body: field `photo` containing the image file
 
-**Response thành công (200):**
+**Success Response (200):**
 ```json
 {
   "candidates": [
     {
       "content": {
         "parts": [
-          { "text": "## 📐 Bố cục & Góc máy\n..." }
+          { "text": "## 📐 Composition\n..." }
         ]
       }
     }
@@ -42,97 +42,98 @@ Upload ảnh để phân tích.
 }
 ```
 
-**Response lỗi:**
-- `400 Bad Request`: Không có ảnh, file quá lớn, sai định dạng, hoặc chưa cấu hình API key
-- `500 Problem`: Gemini API lỗi hoặc tất cả model đều không khả dụng
+**Error Responses:**
+- `400 Bad Request`: No image, file too large, unsupported format, or API key not configured
+- `500 Problem`: Gemini API error or all models unavailable
 
 ### GET `/*` (Fallback)
 
-Trả về `index.html` cho mọi route không khớp — hỗ trợ SPA.
+Returns `index.html` for any unmatched route — SPA support.
 
-## 4. Luồng xử lý chính
+## 4. Main Flow
 
 ```
-1. Người dùng upload ảnh
-2. Frontend validate (type, size) → hiển thị preview
-3. Người dùng nhấn "Phân tích ảnh"
-4. Frontend gửi POST /api/analyze (FormData)
+1. User uploads a photo
+2. Frontend validates (type, size) → shows preview
+3. User clicks "Analyze"
+4. Frontend sends POST /api/analyze (FormData) with AbortController
 5. Backend:
-   a. ImageValidator.Validate() — kiểm tra file
-   b. Kiểm tra API key đã cấu hình
-   c. ImageValidator.ReadAsBase64Async() — đọc ảnh thành base64
-   d. PromptBuilder.Build() — tạo prompt từ appsettings.json
-   e. GeminiClient.AnalyzeImageAsync() — gọi Gemini API
-      - Thử lần lượt từng model trong danh sách
-      - Nếu 429/404 → fallback sang model tiếp theo
-      - Nếu lỗi khác → trả lỗi ngay
-6. Frontend nhận response:
-   a. Parse markdown thành các section
-   b. Tách điểm tổng quan, điểm thành phần
-   c. Hiển thị kết quả với collapsible sections
+   a. ImageValidator.Validate() — checks the file
+   b. Checks API key is configured
+   c. ImageValidator.ReadAsBase64Async() — reads image as base64
+   d. PromptBuilder.Build() — builds prompt from appsettings.json
+   e. GeminiClient.AnalyzeImageAsync() — calls Gemini API
+      - Tries each model in order
+      - On 429/404 → falls back to next model
+      - On timeout/network error → falls back to next model
+      - On other errors → returns error immediately
+6. Frontend receives response:
+   a. Parses markdown into sections
+   b. Extracts overall score and sub-scores
+   c. Renders results with collapsible sections
 ```
 
-## 5. Các thành phần (Components)
+## 5. Components
 
 ### 5.1 Backend Services
 
-| Service | File | Mô tả |
-|---------|------|--------|
-| `GeminiClient` | `Services/GeminiClient.cs` | Gọi Gemini API, tự động fallback model khi gặp lỗi 429/404 |
-| `ImageValidator` | `Services/ImageValidator.cs` | Validate file upload (type, size), đọc ảnh thành base64 |
-| `PromptBuilder` | `Services/PromptBuilder.cs` | Tạo prompt từ cấu hình `AI` trong appsettings.json |
+| Service | File | Description |
+|---------|------|-------------|
+| `GeminiClient` | `Services/GeminiClient.cs` | Calls Gemini API via `IHttpClientFactory` with 5-min timeout, auto model fallback on 429/404/timeout, `CancellationToken` support |
+| `ImageValidator` | `Services/ImageValidator.cs` | Validates file uploads (type, size), reads image as base64 |
+| `PromptBuilder` | `Services/PromptBuilder.cs` | Builds the AI prompt from the `AI` section in appsettings.json |
 
 ### 5.2 Frontend
 
-| File | Mô tả |
-|------|--------|
-| `index.html` | Layout chính với 4 bước: Upload → Preview → Loading → Result |
-| `app.js` | Xử lý upload, gọi API, parse markdown, render kết quả |
-| `style.css` | Dark theme, responsive, animation |
+| File | Description |
+|------|-------------|
+| `index.html` | Main layout with 4 steps: Upload → Preview → Loading → Result |
+| `app.js` | Handles upload, API calls (with `AbortController`), markdown parsing, result rendering |
+| `style.css` | Dark theme, responsive design, animations |
 
-## 6. Tiêu chí đánh giá ảnh
+## 6. Review Criteria
 
-Cấu hình trong `appsettings.json > AI > Criteria`. Mặc định gồm 12 tiêu chí:
+Configured in `appsettings.json > AI > Criteria`. Defaults to 12 criteria:
 
-| # | Tiêu chí | Mô tả ngắn |
-|---|----------|-------------|
-| 1 | 📐 Bố cục & Góc máy | Rule of thirds, leading lines, góc chụp |
-| 2 | 💡 Ánh sáng | Chất lượng, hướng, độ cứng/mềm |
-| 3 | 🎨 Màu sắc & Tông màu | Hài hòa màu, white balance, color grading |
-| 4 | 🔍 Chủ thể & Nét | Focus, DOF, sharpness, bokeh |
-| 5 | 🎭 Cảm xúc & Câu chuyện | Mood, narrative, decisive moment |
-| 6 | 🖼️ Hậu cảnh & Tiền cảnh | Background, foreground, depth layers |
-| 7 | ⚖️ Phơi sáng & Histogram | Exposure, dynamic range, contrast |
-| 8 | ✂️ Cắt cúp & Tỷ lệ | Cropping, aspect ratio, headroom |
-| 9 | 👤 Tư thế & Biểu cảm | Posing, expression (nếu có người) |
-| 10 | 🔧 Kỹ thuật chụp | Shutter speed, aperture, ISO, lens |
-| 11 | ⭐ Đánh giá tổng quan | Điểm tổng 1-10 với breakdown |
-| 12 | 💡 Góp ý cải thiện | 5-7 tips cụ thể |
+| # | Criterion | Summary |
+|---|-----------|---------|
+| 1 | 📐 Composition & Angle | Rule of thirds, leading lines, camera angle |
+| 2 | 💡 Lighting | Quality, direction, hardness/softness |
+| 3 | 🎨 Color & Tone | Color harmony, white balance, color grading |
+| 4 | 🔍 Subject & Focus | Focus accuracy, DOF, sharpness, bokeh |
+| 5 | 🎭 Emotion & Story | Mood, narrative, decisive moment |
+| 6 | 🖼️ Background & Foreground | Background cleanliness, foreground interest, depth |
+| 7 | ⚖️ Exposure & Histogram | Exposure accuracy, dynamic range, contrast |
+| 8 | ✂️ Cropping & Ratio | Crop choices, aspect ratio, headroom |
+| 9 | 👤 Pose & Expression | Posing, facial expression (if people present) |
+| 10 | 🔧 Technical Execution | Shutter speed, aperture, ISO, lens |
+| 11 | ⭐ Overall Rating | Score 1–10 with breakdown |
+| 12 | 💡 Improvement Tips | 5–7 specific, actionable tips |
 
-## 7. Ràng buộc & Giới hạn
+## 7. Constraints & Limits
 
-| Hạng mục | Giá trị |
-|----------|---------|
-| Định dạng ảnh | JPEG, PNG, WebP, GIF |
-| Dung lượng tối đa | 10 MB |
+| Item | Value |
+|------|-------|
+| Image formats | JPEG, PNG, WebP, GIF |
+| Max file size | 10 MB |
 | Framework | .NET 9 |
-| Gemini models | Cấu hình trong appsettings, fallback tự động |
-| Ngôn ngữ phản hồi | Cấu hình được (mặc định: Vietnamese) |
+| HTTP client timeout | 5 minutes (configurable) |
+| Gemini models | Configured in appsettings, auto fallback |
+| Response language | Configurable (default: Vietnamese) |
 
-## 8. Bảo mật
+## 8. Security
 
-- API key lưu trong `appsettings.json` — không nên commit lên public repo
-- Khuyến nghị sử dụng [User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) hoặc biến môi trường cho production
-- Validate file upload phía server (type + size) trước khi xử lý
-- Không lưu trữ ảnh trên server — chỉ xử lý trong memory
+- API key stored in `appsettings.json` — should not be committed to public repos
+- Recommended: use [User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) or environment variables for production
+- Server-side file validation (type + size) before processing
+- No images stored on server — processed in memory only
+- Frontend uses `AbortController` to cancel abandoned requests
 
-## 9. Mở rộng
+## 9. Future Improvements
 
-Một số hướng phát triển tiếp theo:
-
-- Lưu lịch sử đánh giá (database)
-- So sánh trước/sau khi chỉnh sửa ảnh
-- Hỗ trợ batch upload nhiều ảnh
-- Export kết quả ra PDF
-- Thêm authentication
-- Deploy lên cloud (Azure App Service, AWS, etc.)
+- Review history (database storage)
+- Before/after photo comparison
+- Batch upload support
+- Export results to PDF
+- Authentication
+- Cloud deployment (Azure App Service, AWS, etc.)
