@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Review AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Photo Review AI</h1>
+        <p class="subtitle">Upload ảnh và nhận đánh giá chi tiết từ AI về kỹ thuật nhiếp ảnh</p>
+
+        <!-- Step 1: Upload -->
+        <div id="stepUpload" class="step active">
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="fileInput" accept="image/*">
+                <div class="upload-icon">🖼️</div>
+                <div class="upload-text">Kéo thả ảnh vào đây hoặc <strong>click để chọn</strong></div>
+                <div class="upload-hint">JPG, PNG — tối đa 10MB</div>
+            </div>
+        </div>
+
+        <!-- Step 2: Preview + Analyze -->
+        <div id="stepPreview" class="step">
+            <img id="previewImg" class="preview-img" alt="Preview">
+            <div class="actions">
+                <button class="btn btn-primary btn-lg" id="analyzeBtn">🔍 Phân tích ảnh</button>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="stepLoading" class="step">
+            <img id="loadingImg" class="preview-img preview-img-small" alt="Preview">
+            <div class="loading-box">
+                <div class="spinner"></div>
+                <div class="loading-text">AI đang phân tích ảnh của bạn...</div>
+                <div class="loading-hint">Quá trình này có thể mất 10-30 giây</div>
+            </div>
+        </div>
+
+        <!-- Step 3: Result -->
+        <div id="stepResult" class="step">
+            <div class="result-header">
+                <img id="resultImg" class="preview-img preview-img-small" alt="Photo">
+                <div id="resultSummary" class="summary-box"></div>
+            </div>
+            <div id="resultDetails" class="details-sections"></div>
+            <div class="actions">
+                <button class="btn btn-primary btn-lg" id="newPhotoBtn">📷 Phân tích ảnh khác</button>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div class="error" id="error"></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
