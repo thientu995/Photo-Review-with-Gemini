@@ -6,7 +6,7 @@ A web app that analyzes and reviews photography using AI (Google Gemini). Upload
 
 | Upload | Analyzing | Result |
 |--------|-----------|--------|
-| ![Analyzing](image/Screenshot%202026-03-28%20151540.png) | ![Upload](image/Screenshot%202026-03-28%20151452.png) | ![Result](image/screencapture-localhost-53864-2026-03-28-15_22_15.png) |
+| ![Upload](https://github.com/thientu995/Photo-Review-with-Gemini/blob/main/Image/Screenshot%202026-03-28%20151540.png) | ![Analyzing](https://github.com/thientu995/Photo-Review-with-Gemini/blob/main/Image/Screenshot%202026-03-28%20151452.png) | ![Result](https://github.com/thientu995/Photo-Review-with-Gemini/blob/main/Image/screencapture-localhost-53864-2026-03-28-15_22_15.png?raw=true) |
 
 ## How It Works
 
